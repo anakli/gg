@@ -54,7 +54,40 @@ To use `gg`, the following environment variables must be set:
 - `GG_LAMBDA_ROLE` => the role that will be assigned to the executed Lambda.
 functions. Must have *AmazonS3FullAccess* and *AWSLambdaBasicExecutionRole*
 permissions.
-- `WS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` => your AWS access key
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` => your AWS access key
+
+
+### Setting up Redis storage for gg
+
+The default storage system for gg with AWS Lambda is S3. This fork of gg provides a Redis storage backend option for gg with AWS Lambda. To use the Redis backed, run gg-force with `GG_REDIS=1` (see example at the end of this README). 
+
+To set up [Redis](https://redis.io), you can either start Redis on a regular EC2 instance or use the AWS [ElastiCache](https://aws.amazon.com/elasticache/) service. When using the Redis backed, AWS lambda workers are configured with access to the Virtual Private Cloud (VPC) where the Redis service is running. You will need to setup a VPC, subnet, security group, internet gateway and route table. 
+
+#### Install Redis dependencies:
+
+~~~
+git clone https://github.com/hmartiro/redox.git
+sudo apt-get install -y cmake build-essential
+sudo apt-get install -y libhiredis-dev libev-dev
+cd redox
+mkdir build && cd build
+cmake ..
+make
+sudo make install
+export LD_LIRABRY_PATH=$LD_LIBRARY_PATH:/usr/local/lib64
+
+pip install redis
+pip install --target /path/to/gg/src/remote redis
+~~~
+
+### Set envrionment variables for GG_REDIS:
+To use `gg` with the Redis storage backend, the following environment variables must be set (in addition to the environment variables above):
+
+- `GG_REDIS_HOSTADDR` => public IP address of Redis EC2 node or redis elasticache service.
+- `GG_REDIS_PRIVATE_HOSTADDR` => private IP address of Redis EC2 node.
+- `GG_VPC_SECURITY_GROUP_ID` => security group id of VPC where Redis is running.
+- `GG_VPC_SUBNET_ID` => subnet id of VPC where Redis is running.
+
 
 ### Installing the Functions
 
@@ -99,8 +132,18 @@ gg-infer make -j$(nproc) # creates the thunks
 ~~~
 
 Now, to actually compile `mosh-server` on AWS Lambda with 100-way parallelism,
-you can execute:
+with the default S3 storage system, you can execute:
 
 ~~~
 GG_LAMBDA=1 gg-force --jobs 100 --status src/frontend/mosh-server
 ~~~
+
+
+To run the same job wih the Redis storage backend,
+you can execute:
+
+~~~
+GG_LAMBDA=1 GG_REDIS=1 gg-force --jobs 100 --status src/frontend/mosh-server
+~~~
+
+To enable printing of infile and output file sizes, add `GG_SIZELOGS=1` to these commands.
