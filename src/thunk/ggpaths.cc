@@ -162,8 +162,46 @@ namespace gg {
       }
       return bucket;
     }
+    
+	bool redis_enabled()
+    {
+      const static string redis = safe_getenv_or( "GG_REDIS", "");
+      if ( redis.length() == 0 ) {
+      	return false;
+	  }
+	  else
+      	return true;
+    }
+	
+	bool enable_sizelogs()
+    {
+      const static string sizelogs = safe_getenv_or( "GG_SIZELOGS", "" );
+      if ( sizelogs.length() == 0 ) {
+      	return false;
+	  }
+	  else
+      	return true;
+    }
 
-    pair<string, uint16_t> runner_server()
+    string redis_hostaddr()
+    {
+      const static string hostaddr = safe_getenv( "GG_REDIS_HOSTADDR" );
+      if ( hostaddr.length() == 0 ) {
+        throw runtime_error( "GG_REDIS_HOSTADDR environment variable not set" );
+      }
+      return hostaddr;
+    }
+    
+    string redis_private_hostaddr()
+    {
+      const static string hostaddr = safe_getenv( "GG_REDIS_PRIVATE_HOSTADDR" );
+      if ( hostaddr.length() == 0 ) {
+        throw runtime_error( "GG_REDIS_PRIVATE_HOSTADDR environment variable not set" );
+      }
+      return hostaddr;
+    }
+
+	pair<string, uint16_t> runner_server()
     {
       const static string address = safe_getenv( "GG_RUNNER_SERVER" );
       if ( address.length() == 0 ) {

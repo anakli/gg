@@ -32,7 +32,8 @@ void AWSLambdaExecutionEngine::force_thunk( const string & hash,
                                             const Thunk & thunk,
                                             ExecutionLoop & exec_loop )
 {
-  HTTPRequest request = generate_request( thunk, hash, false );
+  //HTTPRequest request = generate_request( thunk, hash, false );
+  HTTPRequest request = generate_request( thunk, hash, true );
 
   TCPSocket sock;
   sock.set_blocking( false );
@@ -69,6 +70,9 @@ void AWSLambdaExecutionEngine::force_thunk( const string & hash,
         cerr << http_response.str() << endl;
         throw runtime_error( "expected output for " + thunk_hash + ", got output for " + response.thunk_hash );
       }
+
+      if (gg::remote::enable_sizelogs())
+        cout << "output_size for thunk " << response.thunk_hash << ": " << response.output_size << "\n";
 
       gg::cache::insert( response.thunk_hash, response.output_hash );
       callback_( response.thunk_hash, response.output_hash,

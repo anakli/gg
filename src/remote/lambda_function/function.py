@@ -27,12 +27,18 @@ from base64 import b64decode
 from ggpaths import GGPaths, GGCache
 from common import is_executable, make_executable, run_command
 
+import redis
+
 class GGInfo:
     def __init__(self):
         self.s3_bucket = None
         self.s3_region = None
         self.thunk_hash = None
+        self.hostaddr = None
+        self.private_hostaddr = None
+        self.redis_enabled = False
         self.infiles = []
+        self.downloadfiles = []
 
 def fetch_dependencies(gginfo, infiles, cleanup_first=True):
     download_list = []
@@ -55,13 +61,26 @@ def fetch_dependencies(gginfo, infiles, cleanup_first=True):
             continue
 
         download_list += [infile['hash']]
+        gginfo.downloadfiles += [infile['size']]
 
-    s3_ip = socket.gethostbyname('{}.s3.amazonaws.com'.format(gginfo.s3_bucket))
-    p = sub.Popen(['gg-s3-download', gginfo.s3_region, gginfo.s3_bucket, s3_ip], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE)
-    out, err = p.communicate(input="\n".join(download_list).encode('ascii'))
+    use_redis = gginfo.redis_enabled
+    if use_redis:
+        rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
+        for infile in download_list:
+            obj = rclient.get(infile) 
+            if obj is None:
+                raise Exception("error: no such key!")
+            filename = GGPaths.blob_path(infile)
+            f = open(filename, 'wb')
+            f.write(obj)
 
-    if p.returncode != 0:
-        return False
+    else:
+        s3_ip = socket.gethostbyname('{}.s3.amazonaws.com'.format(gginfo.s3_bucket))
+        p = sub.Popen(['gg-s3-download', gginfo.s3_region, gginfo.s3_bucket, s3_ip], stdout=sub.PIPE, stdin=sub.PIPE, stderr=sub.PIPE)
+        out, err = p.communicate(input="\n".join(download_list).encode('ascii'))
+
+        if p.returncode != 0:
+            return False
 
     return True
 
@@ -71,6 +90,7 @@ class TimeLog:
         self.start = time.time()
         self.prev = self.start
         self.points = []
+        self.sizes = []
 
     def add_point(self, title):
         if not self.enabled:
@@ -79,6 +99,18 @@ class TimeLog:
         now = time.time()
         self.points += [(title, now - self.prev)]
         self.prev = now
+    
+    def add_size(self, title, size):
+        if not self.enabled:
+            return
+
+        self.sizes += [(title, size)]
+    
+    def add_downloadsize(self, sizes):
+        if not self.enabled:
+            return
+
+        self.sizes = sizes
 
 def handler(event, context):
     gginfo = GGInfo()
@@ -86,6 +118,9 @@ def handler(event, context):
     gginfo.thunk_hash = event['thunk_hash']
     gginfo.s3_bucket = event['s3_bucket']
     gginfo.s3_region = event['s3_region']
+    gginfo.hostaddr = event['hostaddr']
+    gginfo.private_hostaddr = event['private_hostaddr']
+    gginfo.redis_enabled = event['redis_enabled']
     gginfo.infiles = event['infiles']
 
     enable_timelog = event.get('timelog', False)
@@ -117,7 +152,11 @@ def handler(event, context):
             'errorType': 'GG-FetchDependenciesFailed'
         }
 
+    timelogger.add_downloadsize(gginfo.downloadfiles);
+
     for infile in gginfo.infiles:
+        #timelogger.add_size("infile size", infile['size']);
+        #timelogger.add_size(infile['hash'], infile['size']);
         if infile['executable']:
             make_executable(GGPaths.blob_path(infile['hash']))
 
@@ -143,37 +182,66 @@ def handler(event, context):
 
     timelogger.add_point("check the outfile")
 
-    s3_client = boto3.client('s3')
-    s3_client.upload_file(GGPaths.blob_path(result), gginfo.s3_bucket, result)
+    use_redis = 1
+    if use_redis:
+        #FIXME: consider reusing original connection from fetch dependencies instead of starting new one
+        rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
+        print(result)
+        print(GGPaths.blob_path(result))
+        #open result file and pass as value
+        f = open(GGPaths.blob_path(result), 'rb')
+        result_value = f.read()
+        obj = rclient.set(result, result_value)
+        timelogger.add_point("upload outfile to redis")
+    else:
+        s3_client = boto3.client('s3')
+        s3_client.upload_file(GGPaths.blob_path(result), gginfo.s3_bucket, result)
 
-    s3_client.put_object_acl(
-        ACL='public-read',
-        Bucket=gginfo.s3_bucket,
-        Key=result
-    )
-
-    s3_client.put_object_tagging(
-        Bucket=gginfo.s3_bucket,
-        Key=result,
-        Tagging={
-            'TagSet': [
-                { 'Key': 'gg:reduced_from', 'Value': gginfo.thunk_hash },
-                { 'Key': 'gg:executable', 'Value': 'true' if executable else 'false' }
-            ]
-        }
-    )
-
-    timelogger.add_point("upload outfile to s3")
-
-    if enable_timelog:
-        s3_client.put_object(
+        s3_client.put_object_acl(
             ACL='public-read',
             Bucket=gginfo.s3_bucket,
-            Key="runlogs/{}".format(gginfo.thunk_hash),
-            Body=str({'output_hash': result,
+            Key=result
+        )
+
+        s3_client.put_object_tagging(
+            Bucket=gginfo.s3_bucket,
+            Key=result,
+            Tagging={
+                'TagSet': [
+                    { 'Key': 'gg:reduced_from', 'Value': gginfo.thunk_hash },
+                    { 'Key': 'gg:executable', 'Value': 'true' if executable else 'false' }
+                ]
+            }
+        )
+
+        timelogger.add_point("upload outfile to s3")
+
+    if enable_timelog:
+        if use_redis:
+            rclient.set("runlogs/{}".format(gginfo.thunk_hash),
+                    str({'output_hash': result,
+                      'started': timelogger.start,
+                      'timelog': timelogger.points}).encode('utf-8')) #TODO: encode with utf or no?
+                        
+        else:
+            s3_client.put_object(
+                ACL='public-read',
+                Bucket=gginfo.s3_bucket,
+                Key="runlogs/{}".format(gginfo.thunk_hash),
+                Body=str({'output_hash': result,
                       'started': timelogger.start,
                       'timelog': timelogger.points}).encode('utf-8')
-        )
+            )
+        
+            s3_client.put_object(
+                ACL='public-read',
+                Bucket=gginfo.s3_bucket,
+                Key="sizelogs/{}".format(gginfo.thunk_hash),
+                Body=str({'output_hash': result,
+                      'started': timelogger.start,
+                      'timelog': timelogger.sizes}).encode('utf-8')
+            )
+
 
     return {
         'thunk_hash': gginfo.thunk_hash,

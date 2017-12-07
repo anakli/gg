@@ -47,7 +47,7 @@ gg_execute_static_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS) -ldl -lz
 gg_execute_static_LDFLAGS = -static -s
 
 gg_force_SOURCES = gg-force.cc
-gg_force_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS) $(SSL_LIBS)
+gg_force_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS) $(SSL_LIBS) -lredox -lev -lhiredis
 
 gg_mock_SOURCES = gg-mock.cc
 gg_mock_LDADD = $(BASE_LDADD) $(CRYPTO_LIBS)

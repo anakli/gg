@@ -171,7 +171,15 @@ vector<string> Reductor::reduce()
 
         bool executed = false;
 
-        for ( auto & exec_engine : exec_engines_ ) {
+		if (gg::remote::enable_sizelogs()) {
+		  cout << "infiles_size for thunk " << thunk_hash << ": ";
+	      for (auto & infile : thunk.infiles()) {
+		    cout << infile.size() << ", ";
+		  }
+		  cout << "\n";
+		}
+        
+		for ( auto & exec_engine : exec_engines_ ) {
           if ( exec_engine->can_execute( thunk ) ) {
             exec_engine->force_thunk( thunk_hash, thunk, exec_loop_ );
             executed = true;

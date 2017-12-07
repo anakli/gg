@@ -63,7 +63,8 @@ ThunkStats print_thunk_info( const string & hash, unsigned int indent )
     if ( infile.order() ) {
       stats += print_thunk_info( infile.content_hash(), indent + 1 );
     } else if ( infile.size() ) {
-      cout << indentation << " " << infile_name << "\n";
+      //cout << indentation << " " << infile_name << "\n";
+      cout << indentation << " " << infile_name << " size: " << infile.size() << "\n";
 
       stats.files.insert( { infile.content_hash(), infile.size() } );
     }

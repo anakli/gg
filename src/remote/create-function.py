@@ -64,6 +64,13 @@ def create_lambda_package(output, function_execs, gg_execute_static, gg_s3_downl
     with ZipFile(output, 'a') as funczip:
         for fn, fp in PACKAGE_FILES.items():
             funczip.write(fp, fn)
+        if "GG_REDIS" in os.environ:
+            # if using redis, need to download python redis package into /path/to/gg/src/remote
+            # run the following: pip install --target /path/to/gg/src/remote redis
+            for f in os.listdir('redis'):
+                fn = os.path.join('redis', f)
+                funczip.write(fn, fn)
+
 
 def install_lambda_package(package_file, function_name, role, region, delete=False):
     with open(package_file, 'rb') as pfin:
@@ -77,20 +84,47 @@ def install_lambda_package(package_file, function_name, role, region, delete=Fal
         except:
             pass
 
-    response = client.create_function(
-        FunctionName=function_name,
-        Runtime='python3.6',
-        Role=role,
-        Handler='function.handler',
-        Code={
-            'ZipFile': package_data
-        },
-        Timeout=300,
-        MemorySize=1536,
-        Tags={
-            'gg': 'generic',
-        }
-    )
+    if "GG_REDIS" in os.environ:
+        if "GG_VPC_SUBNET_ID" and "GG_VPC_SECURITY_GROUP_ID" in os.environ:
+            response = client.create_function(
+                FunctionName=function_name,
+                Runtime='python3.6',
+                Role=role,
+                Handler='function.handler',
+                Code={
+                    'ZipFile': package_data
+                },
+                Timeout=300,
+                MemorySize=1536,
+                Tags={
+                    'gg': 'generic',
+                },
+                VpcConfig={
+                'SubnetIds': [
+                    os.environ.get("GG_VPC_SUBNET_ID"),
+                ],
+                'SecurityGroupIds': [
+                    os.environ.get("GG_VPC_SECURITY_GROUP_ID"),
+                ]
+                }
+            )
+        else:
+            raise Exception("GG_REDIS is set but GG_VPC_SUBNET_ID and/or GG_VPC_SECURITY_GROUP_ID not defined")
+    else:
+        response = client.create_function(
+            FunctionName=function_name,
+            Runtime='python3.6',
+            Role=role,
+            Handler='function.handler',
+            Code={
+                'ZipFile': package_data
+            },
+            Timeout=300,
+            MemorySize=1536,
+            Tags={
+                'gg': 'generic',
+            }
+        )
 
     print(response['FunctionArn'])
 

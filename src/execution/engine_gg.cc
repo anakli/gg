@@ -72,6 +72,9 @@ void GGExecutionEngine::force_thunk( const string & hash,
         throw runtime_error( "expected output for " + thunk_hash + ", got output for " + response.thunk_hash );
       }
 
+      if (gg::remote::enable_sizelogs())
+	    cout << "output_size for thunk " << response.thunk_hash << ": " << response.output_size << "\n";
+      
       gg::cache::insert( response.thunk_hash, response.output_hash );
       callback_( response.thunk_hash, response.output_hash, 0 );
     },

@@ -13,12 +13,14 @@
 #include "placeholder.hh"
 #include "util.hh"
 #include "s3.hh"
+#include "redis.hh"
 #include "digest.hh"
 #include "optional.hh"
 #include "timeit.hh"
 #include "status_bar.hh"
 #include "reductor.hh"
 #include "backend_s3.hh"
+#include "backend_redis.hh"
 #include "backend_local.hh"
 
 using namespace std;
@@ -131,9 +133,18 @@ int main( int argc, char * argv[] )
     }
 
     if ( lambda_execution or ggremote_execution ) {
-      storage_backend = make_unique<S3StorageBackend>( AWSCredentials {},
+		bool redis = gg::remote::redis_enabled();
+		if ( redis ) {
+      		storage_backend = make_unique<RedisStorageBackend>( AWSCredentials {},
+                                                       gg::remote::redis_hostaddr(),
+                                                       6379 );
+		}
+
+  		else {
+			storage_backend = make_unique<S3StorageBackend>( AWSCredentials {},
                                                        gg::remote::s3_bucket(),
                                                        gg::remote::s3_region() );
+		}
     }
 
     Reductor reductor { target_hashes, max_jobs, execution_environments,
