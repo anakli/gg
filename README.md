@@ -59,11 +59,11 @@ permissions.
 
 ### Setting up Redis storage for gg
 
-The default storage system for gg with AWS Lambda is S3. This fork of gg provides a Redis storage backend option for gg with AWS Lambda. To use the Redis backed, run gg-force with `GG_REDIS=1` (see example at the end of this README). 
+The default storage system for gg with AWS Lambda is [S3](https://aws.amazon.com/s3). This fork of gg provides a [Redis](https://redis.io) storage backend option for gg with AWS Lambda. To use the Redis backed, run gg-force with `GG_REDIS=1` (see example at the end of this README). 
 
-To set up [Redis](https://redis.io), you can either start Redis on a regular EC2 instance or use the AWS [ElastiCache](https://aws.amazon.com/elasticache/) service. When using the Redis backed, AWS lambda workers are configured with access to the Virtual Private Cloud (VPC) where the Redis service is running. You will need to setup a VPC, subnet, security group, internet gateway and route table. 
+To set up Redis, you can either download the Redis code and run it on a regular EC2 instance or use the AWS [ElastiCache](https://aws.amazon.com/elasticache/) service. When using the Redis backed for gg, AWS lambda workers are configured with access to the Virtual Private Cloud (VPC) where the Redis service is running. Therefore, you will need to setup a VPC, subnet, security group, internet gateway and route table. 
 
-#### Install Redis dependencies:
+##### Install Redis-related dependencies:
 
 ~~~
 git clone https://github.com/hmartiro/redox.git
@@ -80,7 +80,7 @@ pip install redis
 pip install --target /path/to/gg/src/remote redis
 ~~~
 
-### Set envrionment variables for GG_REDIS:
+##### Set Redis-related envrionment variables:
 To use `gg` with the Redis storage backend, the following environment variables must be set (in addition to the environment variables above):
 
 - `GG_REDIS_HOSTADDR` => public IP address of Redis EC2 node or redis elasticache service.
@@ -89,7 +89,7 @@ To use `gg` with the Redis storage backend, the following environment variables 
 - `GG_VPC_SUBNET_ID` => subnet id of VPC where Redis is running.
 
 
-### Installing the Functions
+### Installing the gg Functions
 
 After setting the environment variables, you need to install `gg` functions on
 AWS Lambda. To do so:
