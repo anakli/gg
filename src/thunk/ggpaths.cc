@@ -176,8 +176,8 @@ namespace gg {
 
     string redis_hostaddr()
     {
-      const static string hostaddr = safe_getenv( "GG_REDIS_HOSTADDR" );
-      if ( hostaddr.length() == 0 ) {
+      const static string hostaddr = safe_getenv_or( "GG_REDIS_HOSTADDR" , "0");
+      if ( redis_enabled() && hostaddr.length() == 0 ) {
         throw runtime_error( "GG_REDIS_HOSTADDR environment variable not set" );
       }
       return hostaddr;
@@ -185,8 +185,8 @@ namespace gg {
     
     string redis_private_hostaddr()
     {
-      const static string hostaddr = safe_getenv( "GG_REDIS_PRIVATE_HOSTADDR" );
-      if ( hostaddr.length() == 0 ) {
+      const static string hostaddr = safe_getenv_or( "GG_REDIS_PRIVATE_HOSTADDR" , "0");
+      if ( redis_enabled() && hostaddr.length() == 0 ) {
         throw runtime_error( "GG_REDIS_PRIVATE_HOSTADDR environment variable not set" );
       }
       return hostaddr;

@@ -27,7 +27,8 @@ from base64 import b64decode
 from ggpaths import GGPaths, GGCache
 from common import is_executable, make_executable, run_command
 
-import redis
+if os.environ.get('GG_REDIS'):
+    import redis
 
 class GGInfo:
     def __init__(self):

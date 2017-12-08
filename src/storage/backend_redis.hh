@@ -6,7 +6,6 @@
 #include "backend.hh"
 #include "aws.hh"
 #include "redis.hh"
-#include <redox.hpp>
 
 class RedisStorageBackend : public StorageBackend
 {
