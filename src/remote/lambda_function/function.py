@@ -63,8 +63,7 @@ def fetch_dependencies(gginfo, infiles, cleanup_first=True):
         download_list += [infile['hash']]
         gginfo.downloadfiles += [infile['size']]
 
-    use_redis = gginfo.redis_enabled
-    if use_redis:
+    if gginfo.redis_enabled:
         rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
         for infile in download_list:
             obj = rclient.get(infile) 
@@ -182,8 +181,7 @@ def handler(event, context):
 
     timelogger.add_point("check the outfile")
 
-    use_redis = 1
-    if use_redis:
+    if gginfo.redis_enabled:
         #FIXME: consider reusing original connection from fetch dependencies instead of starting new one
         rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
         print(result)
@@ -217,7 +215,7 @@ def handler(event, context):
         timelogger.add_point("upload outfile to s3")
 
     if enable_timelog:
-        if use_redis:
+        if gginfo.redis_enabled:
             rclient.set("runlogs/{}".format(gginfo.thunk_hash),
                     str({'output_hash': result,
                       'started': timelogger.start,

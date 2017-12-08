@@ -6,6 +6,7 @@
 #include <sys/fcntl.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "util.hh"
 #include "file_descriptor.hh"
@@ -165,22 +166,12 @@ namespace gg {
     
 	bool redis_enabled()
     {
-      const static string redis = safe_getenv_or( "GG_REDIS", "");
-      if ( redis.length() == 0 ) {
-      	return false;
-	  }
-	  else
-      	return true;
+	  return ( getenv( "GG_REDIS" ) != NULL  && strcmp(getenv("GG_REDIS"), "1") == 0);
     }
 	
 	bool enable_sizelogs()
     {
-      const static string sizelogs = safe_getenv_or( "GG_SIZELOGS", "" );
-      if ( sizelogs.length() == 0 ) {
-      	return false;
-	  }
-	  else
-      	return true;
+	  return ( getenv( "GG_SIZELOGS" ) != NULL  && strcmp(getenv("GG_SIZELOGS"), "1") == 0);
     }
 
     string redis_hostaddr()

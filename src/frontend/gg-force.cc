@@ -133,14 +133,15 @@ int main( int argc, char * argv[] )
     }
 
     if ( lambda_execution or ggremote_execution ) {
-		bool redis = gg::remote::redis_enabled();
-		if ( redis ) {
+		if ( gg::remote::redis_enabled() ) {
+			cout <<" Using Redis storage backend...\n";
       		storage_backend = make_unique<RedisStorageBackend>( AWSCredentials {},
                                                        gg::remote::redis_hostaddr(),
                                                        6379 );
 		}
 
   		else {
+			cout <<" Using S3 storage backend...\n";
 			storage_backend = make_unique<S3StorageBackend>( AWSCredentials {},
                                                        gg::remote::s3_bucket(),
                                                        gg::remote::s3_region() );
