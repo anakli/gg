@@ -27,9 +27,6 @@ from base64 import b64decode
 from ggpaths import GGPaths, GGCache
 from common import is_executable, make_executable, run_command
 
-if os.environ.get('GG_REDIS'):
-    import redis
-
 class GGInfo:
     def __init__(self):
         self.s3_bucket = None
@@ -65,6 +62,7 @@ def fetch_dependencies(gginfo, infiles, cleanup_first=True):
         gginfo.downloadfiles += [infile['size']]
 
     if gginfo.redis_enabled:
+        import redis
         rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
         for infile in download_list:
             obj = rclient.get(infile) 
@@ -183,6 +181,7 @@ def handler(event, context):
     timelogger.add_point("check the outfile")
 
     if gginfo.redis_enabled:
+        import redis
         #FIXME: consider reusing original connection from fetch dependencies instead of starting new one
         rclient = redis.Redis(host=gginfo.private_hostaddr, port=6379, db=0)
         print(result)
