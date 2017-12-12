@@ -89,6 +89,14 @@ To use `gg` with the Redis storage backend, the following environment variables 
 - `GG_VPC_SUBNET_ID` => subnet id of VPC where Redis is running.
 
 
+Recompile ggfunctions with `GG_REDIS=1` flag if using Redis:
+
+~~
+cd /path/to/gg/src/remote
+GG_REDIS=1 make ggfunctions
+~~
+
+
 ### Installing the gg Functions
 
 After setting the environment variables, you need to install `gg` functions on
