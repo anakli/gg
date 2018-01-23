@@ -51,9 +51,10 @@ def create_lambda_package(output, function_execs, gg_execute_static, gg_s3_downl
     PACKAGE_FILES = {
         "gg-execute-static": gg_execute_static,
         "gg-s3-download": gg_s3_download,
-        "function.py": "lambda_function/function.py",
+        "function.py": "lambda_function/function_crail.py",
         "ggpaths.py": "lambda_function/ggpaths.py",
-        "common.py": "lambda_function/common.py"
+        "common.py": "lambda_function/common.py",
+        "crail.py": "crail.py"
     }
 
     for exe in function_execs:
@@ -64,12 +65,24 @@ def create_lambda_package(output, function_execs, gg_execute_static, gg_s3_downl
     with ZipFile(output, 'a') as funczip:
         for fn, fp in PACKAGE_FILES.items():
             funczip.write(fp, fn)
-        if "GG_REDIS" in os.environ:
+        for f in os.listdir('jars'):
+            fn = os.path.join('jars', f)
+            funczip.write(fn, fn)
+        for f in os.listdir('bin'):
+            fn = os.path.join('bin', f)
+            funczip.write(fn, fn)
+        for f in os.listdir('conf'):
+            fn = os.path.join('conf', f)
+            funczip.write(fn, fn)
+        #if "GG_REDIS" in os.environ:
             # if using redis, need to download python redis package into /path/to/gg/src/remote
             # run the following: pip install --target /path/to/gg/src/remote redis
-            for f in os.listdir('redis'):
-                fn = os.path.join('redis', f)
-                funczip.write(fn, fn)
+            #print("trying to add redis\n")
+            #for f in os.listdir('redis'):
+            #    fn = os.path.join('redis', f)
+        #if "GG_CRAIL" in os.environ:
+            #funczip.write("crail.py", "crail.py")
+            #funczip.write("function.py", "lambda_function/function_crail.py")
 
 
 def install_lambda_package(package_file, function_name, role, region, delete=False):
@@ -84,7 +97,7 @@ def install_lambda_package(package_file, function_name, role, region, delete=Fal
         except:
             pass
 
-    if "GG_REDIS" in os.environ:
+    if "GG_REDIS" in os.environ or "GG_CRAIL" in os.environ:
         if "GG_VPC_SUBNET_ID" and "GG_VPC_SECURITY_GROUP_ID" in os.environ:
             response = client.create_function(
                 FunctionName=function_name,
@@ -95,7 +108,8 @@ def install_lambda_package(package_file, function_name, role, region, delete=Fal
                     'ZipFile': package_data
                 },
                 Timeout=300,
-                MemorySize=1536,
+                #MemorySize=1536,
+                MemorySize=3008,
                 Tags={
                     'gg': 'generic',
                 },
@@ -109,7 +123,7 @@ def install_lambda_package(package_file, function_name, role, region, delete=Fal
                 }
             )
         else:
-            raise Exception("GG_REDIS is set but GG_VPC_SUBNET_ID and/or GG_VPC_SECURITY_GROUP_ID not defined")
+            raise Exception("GG_REDIS or GG_CRAIL is set but GG_VPC_SUBNET_ID and/or GG_VPC_SECURITY_GROUP_ID not defined")
     else:
         response = client.create_function(
             FunctionName=function_name,
@@ -159,7 +173,6 @@ def main():
         function_name = "{prefix}{exechash}".format(
             prefix="gg-", exechash=executable_hash(hashes)
         )
-
         function_file = "{}.zip".format(function_name)
         create_lambda_package(function_file, function_execs, args.gg_execute_static, args.gg_s3_download)
         print("Installing lambda function {}... ".format(function_name), end='')

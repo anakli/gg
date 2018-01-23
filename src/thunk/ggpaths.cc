@@ -169,6 +169,11 @@ namespace gg {
 	  return ( getenv( "GG_REDIS" ) != NULL  && strcmp(getenv("GG_REDIS"), "1") == 0);
     }
 	
+	bool crail_enabled()
+    {
+	  return ( getenv( "GG_CRAIL" ) != NULL  && strcmp(getenv("GG_CRAIL"), "1") == 0);
+    }
+	
 	bool enable_sizelogs()
     {
 	  return ( getenv( "GG_SIZELOGS" ) != NULL  && strcmp(getenv("GG_SIZELOGS"), "1") == 0);
@@ -183,6 +188,15 @@ namespace gg {
       return hostaddr;
     }
     
+    string crail_namenode_addr()
+    {
+      const static string hostaddr = safe_getenv_or( "GG_NAMENODE_ADDR" , "0");
+      if ( crail_enabled() && hostaddr.length() == 0 ) {
+        throw runtime_error( "GG_NAMENODE_ADDR environment variable not set" );
+      }
+      return hostaddr;
+    }
+
     string redis_private_hostaddr()
     {
       const static string hostaddr = safe_getenv_or( "GG_REDIS_PRIVATE_HOSTADDR" , "0");
