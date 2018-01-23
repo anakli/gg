@@ -34,8 +34,10 @@ namespace gg {
     std::string s3_bucket();
     std::string s3_region();
     std::string redis_hostaddr();
+    std::string crail_namenode_addr();
     std::string redis_private_hostaddr();
     bool redis_enabled();
+    bool crail_enabled();
     bool enable_sizelogs();
 
     std::pair<std::string, uint16_t> runner_server();

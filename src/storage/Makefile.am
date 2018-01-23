@@ -9,4 +9,5 @@ noinst_LIBRARIES = libggstorage.a
 
 libggstorage_a_SOURCES = backend.hh backend_local.hh \
                          backend_s3.hh backend_s3.cc \
-						 backed_redis.hh backend_redis.cc
+                         backend_redis.hh backend_redis.cc \
+                         backend_crail.hh backend_crail.cc

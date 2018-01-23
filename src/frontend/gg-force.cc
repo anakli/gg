@@ -14,6 +14,7 @@
 #include "util.hh"
 #include "s3.hh"
 #include "redis.hh"
+#include "crail.hh"
 #include "digest.hh"
 #include "optional.hh"
 #include "timeit.hh"
@@ -21,6 +22,7 @@
 #include "reductor.hh"
 #include "backend_s3.hh"
 #include "backend_redis.hh"
+#include "backend_crail.hh"
 #include "backend_local.hh"
 
 using namespace std;
@@ -96,6 +98,7 @@ int main( int argc, char * argv[] )
 
     for ( const string & target_filename : target_filenames ) {
       string thunk_hash;
+      cout << "Target filename: " << target_filename << "\n";
 
       /* first check if this file is actually a placeholder */
       Optional<ThunkPlaceholder> placeholder = ThunkPlaceholder::read( target_filename );
@@ -139,6 +142,13 @@ int main( int argc, char * argv[] )
                                                        gg::remote::redis_hostaddr(),
                                                        6379 );
 		}
+		else if ( gg::remote::crail_enabled() ) {
+			cout <<" Using Crail storage backend...\n";
+      		storage_backend = make_unique<CrailStorageBackend>( AWSCredentials {},
+                                                       gg::remote::crail_namenode_addr(),
+                                                       9060 ); //CRAIL_NAMENODE_PORT
+			cout <<" Created Crail storage backend.\n";
+		}
 
   		else {
 			cout <<" Using S3 storage backend...\n";
@@ -148,13 +158,18 @@ int main( int argc, char * argv[] )
 		}
     }
 
+    cout << "Reductor now...\n";
     Reductor reductor { target_hashes, max_jobs, execution_environments,
                         move( storage_backend ), status_bar };
 
+    cout << "Upload dependencies...\n";
     reductor.upload_dependencies();
+    cout << "Reduce...\n";
     vector<string> reduced_hashes = reductor.reduce();
+    cout << "Download targets...\n";
     reductor.download_targets( reduced_hashes );
 
+    cout << "Copy, rename, make executable...\n";
     for ( size_t i = 0; i < reduced_hashes.size(); i++ ) {
       roost::copy_then_rename( gg::paths::blob_path( reduced_hashes[ i ] ), target_filenames[ i ] );
 
