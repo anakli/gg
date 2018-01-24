@@ -214,8 +214,9 @@ def handler(event, context):
         timelogger.add_point("upload outfile to redis")
     elif gginfo.crail_enabled:
         print("****************Result is ", result)
-        crail.put(socket, GGPaths.blob_path(result), result, ticket)
-        print(GGPaths.blob_path(result))
+        result_ = "/" + result
+        crail.put(socket, GGPaths.blob_path(result).encode('ascii'), result_.encode('ascii'), ticket)
+        print(result)
         timelogger.add_point("upload outfile to crail")
     else:
         s3_client = boto3.client('s3')
@@ -247,13 +248,13 @@ def handler(event, context):
                       'started': timelogger.start,
                       'timelog': timelogger.points}).encode('utf-8')) #TODO: encode with utf or no?
         elif gginfo.crail_enabled:
-            crail.create_dir("/runlogs")
-            localFileName = "logfile"
+            crail.create_dir(socket, "/runlogs".encode('ascii'), ticket)
+            localFileName = "/tmp/logfile"
             open(localFileName, "wb").write(
                     str({'output_hash': result,
                       'started': timelogger.start,
                       'timelog': timelogger.points}).encode('utf-8')) #TODO: encode with utf or no?
-            crail.put(socket, localFileName, "runlogs/{}".format(gginfo.thunk_hash), ticket)
+            crail.put(socket, localFileName.encode('ascii'), "runlogs/{}".format(gginfo.thunk_hash).encode('ascii'), ticket)
                         
         else:
             s3_client.put_object(
@@ -273,10 +274,6 @@ def handler(event, context):
                       'started': timelogger.start,
                       'timelog': timelogger.sizes}).encode('utf-8')
             )
-
-    print('RESPONSE: ' + 'thunk_hash' + gginfo.thunk_hash +
-        'output_hash' + result +
-        'output_size'+ os.path.getsize(GGPaths.blob_path(result)))
 
     return {
         'thunk_hash': gginfo.thunk_hash,

@@ -1,5 +1,4 @@
 #include <iostream>
-#include <istream>
 #include <sstream>
 #include "crail.hh"
 
@@ -58,8 +57,10 @@ void CrailClient::upload_files( const vector<PutRequest> & upload_requests,
   }
   std::cout << "Dir is: " << dir;
   std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/* /";
-  std::cout << "Execute command: " << command;
+  std::string command2 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/.* /";
+  std::cout << "Execute command: " << command << "\n";
   int err = system(command.c_str());
+  err = system(command2.c_str());
   if (err != 0) {
 	    std::cout << "Error from crail command is: " << err;
   }
@@ -90,9 +91,10 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
   for (size_t i = 1; i < tokens.size() -1 ; i++) {
 	dst_dir += "/" + tokens[i];
   }
-  std::cout << "dst dir is: " << dst_dir;
-  std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + src_dir + "/* " + dst_dir + "/";
-  std::cout << "Execute command: " << command;
+  std::cout << "dst dir is: " << dst_dir << "\n";
+  std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + src_dir + "/ " + dst_dir + "/";
+  //std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
+  std::cout << "Execute command: " << command << "\n";
   int err = system(command.c_str());
   if (err != 0) {
 	    std::cout << "Error from crail command is: " << err;
