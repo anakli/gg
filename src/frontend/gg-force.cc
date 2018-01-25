@@ -169,7 +169,7 @@ int main( int argc, char * argv[] )
     cout << "Download targets...\n";
     reductor.download_targets( reduced_hashes );
 
-    cout << "Copy, rename, make executable...\n";
+    cout << "Move & make executable...\n";
     for ( size_t i = 0; i < reduced_hashes.size(); i++ ) {
       roost::copy_then_rename( gg::paths::blob_path( reduced_hashes[ i ] ), target_filenames[ i ] );
 

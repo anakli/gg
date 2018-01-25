@@ -9,6 +9,7 @@ import socket
 import struct
 import errno
 from subprocess import call, Popen
+import signal
 
 PORT = 2345
 HOSTNAME = "localhost"
@@ -16,8 +17,19 @@ CMD_PUT = 0
 CMD_GET = 1
 CMD_DEL = 2
 CMD_CREATE_DIR = 3
+CMD_CLOSE = 4
 
 RESPONSE_BYTES = 4 + 8 + 2 # INT (msg_len) + LONG (ticket) + SHORT (OK or ERROR)
+
+def check_pid(pid):        
+  """ Check For the existence of a unix pid. """
+  try:
+    os.kill(pid, 0)
+  except OSError:
+    return False
+  else:
+    return True
+
 
 def setup_dirs():
   call(["mkdir", "/tmp/hugepages"]) 
@@ -39,19 +51,19 @@ def setup_env(crail_home_path):
 def launch_dispatcher_from_lambda():
   setup_env("/var/task/")
   setup_dirs()
-  Popen(["java", "-cp", "/var/task/jars/*", 
+  p = Popen( ["java", "-cp", "/var/task/jars/*", 
 	         "-Dlog4j.configuration=file:///var/task/conf/log4j.properties", 
 		 "com.ibm.crail.dispatcher.CrailDispatcher"])
   print("launched dispatcher\n")
-  return 
+  return p
 
 # use this for customized CRAIL_HOME directory
 def launch_dispatcher(crail_home_path):
   setup_env(crail_home_path)
-  Popen(["java", "-cp", crail_home_path + "/jars/*", 
+  p = Popen( ["java", "-cp", crail_home_path + "/jars/*", 
 	         "-Dlog4j.configuration=file://" + crail_home_path + "/conf/log4j.properties", 
 		 "com.ibm.crail.dispatcher.CrailDispatcher"])
-  return 
+  return p
 
 def connect():
   try:
@@ -156,5 +168,30 @@ def create_dir(socket, src_filename, ticket):
 
   socket.sendall(pkt) 
   data = socket.recv(RESPONSE_BYTES)
+
+  return data
+
+def close(socket, ticket, p):  
+  '''
+  Send a CLOSE request to CrailFS
+
+  :param socket:           socket with established connection to crail dispatcher
+  :param int ticket:       value greater than 0, unique to each connection
+  :return: the Crail dispatcher response 
+  '''
+  msg_packer = struct.Struct("!iqhii") 
+  msg_len = 2 + 4 + 4 
+
+  msg = (msg_len, ticket, CMD_CLOSE, 0, 0)
+  pkt = msg_packer.pack(*msg)
+
+  socket.sendall(pkt) 
+  data = socket.recv(RESPONSE_BYTES)
+
+  #os.killpg(os.getpgid(p.pid), signal.SIGKILL)
+  p.kill()
+  exists = check_pid(p.pid)
+  print("Process still exists? : ", exists)
+  print("Process return code : ", p.returncode)
 
   return data

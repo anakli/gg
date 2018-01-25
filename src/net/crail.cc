@@ -58,9 +58,13 @@ void CrailClient::upload_files( const vector<PutRequest> & upload_requests,
   std::cout << "Dir is: " << dir;
   std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/* /";
   std::string command2 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/.* /";
+  std::string command3 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -rm -r /.gg; /home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -rm -r /blobs";
+  std::string command4 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -mkdir /runlogs";
   std::cout << "Execute command: " << command << "\n";
   int err = system(command.c_str());
   err = system(command2.c_str());
+  err = system(command3.c_str());
+  err = system(command4.c_str());
   if (err != 0) {
 	    std::cout << "Error from crail command is: " << err;
   }
@@ -68,7 +72,6 @@ void CrailClient::upload_files( const vector<PutRequest> & upload_requests,
   for ( size_t file_id = 0;
 	file_id < upload_requests.size();
 	file_id ++ ) {
-    
   	success_callback( upload_requests[ file_id ] ); //not necessary
   }
 }
@@ -102,7 +105,7 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
   for ( size_t file_id = 0;
 	file_id < download_requests.size();
 	file_id ++ ) {
-    
+        
   	success_callback( download_requests[ file_id ] ); //not necessary
   }
 }
