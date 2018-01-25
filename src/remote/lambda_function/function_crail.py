@@ -158,7 +158,7 @@ def handler(event, context):
 
     timelogger.add_point("copy executables to ggdir")
     
-    #time.sleep(1)
+    time.sleep(1)
     ticket = 2000
     socket = crail.connect()
     # only clean up the gg directory if running on Lambda.
