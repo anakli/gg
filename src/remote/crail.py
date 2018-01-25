@@ -44,7 +44,6 @@ def setup_env(crail_home_path):
   os.environ["CLASSPATH"] = crail_home_path + "jars/crail-client-1.0.jar:" + crail_home_path + \
                              "jars/reflex-client-1.0-jar-with-dependencies.jar:" + crail_home_path + \
                              "jars/log4j.properties:" + crail_home_path + "jars/crail-dispatcher-1.0.jar"
-  #print("CLASSPATH = " , os.environ["CLASSPATH"])
   return
 
 # call this from lambda environment (working directory is /var/task)
@@ -71,23 +70,9 @@ def connect():
     try:
       s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       connected = s.connect_ex((HOSTNAME, PORT))
-      if connected == 0:
-        print("Connected!")
-      else:
-        print("Connect failed")
     except:
       print("Connection refused -- did you launch_dispatcher?")
       continue;
-      
-
-    #except socket.error as e:
-    #  if e.errno == errno.ECONNREFUSED:
-    #    print("Connection refused -- did you launch_dispatcher?")
-    #    return None
-    #  else:
-    #    raise
-    #    return None
-  
   print("Connected to crail dispatcher.")
 
   return s
