@@ -156,11 +156,11 @@ def handler(event, context):
                 shutil.copy(exe_path, blob_path)
                 make_executable(blob_path)
 
-    timelogger.add_point("copy executables to ggdir")
     
-    time.sleep(1)
+    #time.sleep(1)
     ticket = 2000
     socket = crail.connect()
+    timelogger.add_point("copy executables to ggdir")
     # only clean up the gg directory if running on Lambda.
     if not fetch_dependencies(socket, ticket, gginfo, gginfo.infiles, not GG_RUNNER):
         return {

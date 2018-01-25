@@ -66,16 +66,28 @@ def launch_dispatcher(crail_home_path):
   return p
 
 def connect():
-  try:
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((HOSTNAME, PORT))
-  except socket.error as e:
-    if e.errno == errno.ECONNREFUSED:
+  connected = 1
+  while connected != 0:
+    try:
+      s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+      connected = s.connect_ex((HOSTNAME, PORT))
+      if connected == 0:
+        print("Connected!")
+      else:
+        print("Connect failed")
+    except:
       print("Connection refused -- did you launch_dispatcher?")
-      return None
-    else:
-      raise
-      return None
+      continue;
+      
+
+    #except socket.error as e:
+    #  if e.errno == errno.ECONNREFUSED:
+    #    print("Connection refused -- did you launch_dispatcher?")
+    #    return None
+    #  else:
+    #    raise
+    #    return None
+  
   print("Connected to crail dispatcher.")
 
   return s
@@ -188,6 +200,7 @@ def close(socket, ticket, p):
   socket.sendall(pkt) 
   data = socket.recv(RESPONSE_BYTES)
 
+  socket.close()
   #os.killpg(os.getpgid(p.pid), signal.SIGKILL)
   p.kill()
   exists = check_pid(p.pid)
