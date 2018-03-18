@@ -88,14 +88,7 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
 	file_id ++ ) {
     	const string & object_key = download_requests.at( file_id ).object_key;
     
-	//string reply = rdx.get(object_key);
-	//Command<string>& c = rdx.commandSync<string>({"GET", object_key});
-    	//string reply = c.reply();
-	
 	const string & filename = download_requests.at( file_id ).filename.string(); 
-	//FileDescriptor file { CheckSystemCall( "open",
-	//									  open( filename.string().c_str(), O_RDWR | O_TRUNC | O_CREAT,
-	//											S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH ) ) };
   	std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal /" + object_key + " " + filename;
   	//std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
   	std::cout << "Execute command: " << command << "\n";
@@ -104,40 +97,9 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
 	    std::cout << "Error from crail command is: " << err;
   	}
 
-	//file.write( reply, true ); 
     	success_callback( download_requests[ file_id ] ); //not necessary
 
   }
-/*  
-  const string & src_filename = download_requests.at( 0 ).object_key;
-  const string & dst_filename = download_requests.at( 0 ).filename.string(); 
-  
-  vector<string> tokens = split(src_filename, '/');
-  string src_dir = "";
-  for (size_t i = 1; i < tokens.size() -1 ; i++) {
-	src_dir += "/" + tokens[i];
-  }
-  std::cout << "src dir is: " << src_dir;
-  tokens = split(dst_filename, '/');
-  string dst_dir = "";
-  for (size_t i = 1; i < tokens.size() -1 ; i++) {
-	dst_dir += "/" + tokens[i];
-  }
-  std::cout << "dst dir is: " << dst_dir << "\n";
-  std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/ " + dst_dir + "/";
-  //std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
-  std::cout << "Execute command: " << command << "\n";
-  int err = system(command.c_str());
-  if (err != 0) {
-	    std::cout << "Error from crail command is: " << err;
-  }
-  for ( size_t file_id = 0;
-	file_id < download_requests.size();
-	file_id ++ ) {
-        
-  	success_callback( download_requests[ file_id ] ); //not necessary
-  }
-  */
 }
 
 
