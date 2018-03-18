@@ -37,7 +37,7 @@ CrailClient::CrailClient( const AWSCredentials & credentials,
 void CrailClient::download_file( const string & object,
                               const roost::path & filename )
 {
-  std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + object + " " + filename.string();
+  std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + object + " " + filename.string();
   std::cout << "Execute command: " << command;
   int err = system(command.c_str());
   if (err != 0) {
@@ -56,10 +56,10 @@ void CrailClient::upload_files( const vector<PutRequest> & upload_requests,
 	dir += "/" + tokens[i];
   }
   std::cout << "Dir is: " << dir;
-  std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/* /";
-  std::string command2 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyFromLocal " + dir + "/.* /";
-  std::string command3 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -rm -r /.gg; /home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -rm -r /blobs";
-  std::string command4 = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -mkdir /runlogs";
+  std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyFromLocal " + dir + "/* /";
+  std::string command2 = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyFromLocal " + dir + "/.* /";
+  std::string command3 = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -rm -r /.gg; /home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -rm -r /blobs";
+  std::string command4 = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -mkdir /runlogs";
   std::cout << "Execute command: " << command << "\n";
   int err = system(command.c_str());
   err = system(command2.c_str());
@@ -80,6 +80,35 @@ void CrailClient::upload_files( const vector<PutRequest> & upload_requests,
 void CrailClient::download_files( const std::vector<storage::GetRequest> & download_requests,
                                   const std::function<void( const storage::GetRequest & )> & success_callback )
 {
+
+
+
+  for ( size_t file_id = 0;
+	file_id < download_requests.size();
+	file_id ++ ) {
+    	const string & object_key = download_requests.at( file_id ).object_key;
+    
+	//string reply = rdx.get(object_key);
+	//Command<string>& c = rdx.commandSync<string>({"GET", object_key});
+    	//string reply = c.reply();
+	
+	const string & filename = download_requests.at( file_id ).filename.string(); 
+	//FileDescriptor file { CheckSystemCall( "open",
+	//									  open( filename.string().c_str(), O_RDWR | O_TRUNC | O_CREAT,
+	//											S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH ) ) };
+  	std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal /" + object_key + " " + filename;
+  	//std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
+  	std::cout << "Execute command: " << command << "\n";
+  	int err = system(command.c_str());
+  	if (err != 0) {
+	    std::cout << "Error from crail command is: " << err;
+  	}
+
+	//file.write( reply, true ); 
+    	success_callback( download_requests[ file_id ] ); //not necessary
+
+  }
+/*  
   const string & src_filename = download_requests.at( 0 ).object_key;
   const string & dst_filename = download_requests.at( 0 ).filename.string(); 
   
@@ -95,8 +124,8 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
 	dst_dir += "/" + tokens[i];
   }
   std::cout << "dst dir is: " << dst_dir << "\n";
-  std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + src_dir + "/ " + dst_dir + "/";
-  //std::string command = "/home/ubuntu/crail/crail-deployment/crail-1.0/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
+  std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/ " + dst_dir + "/";
+  //std::string command = "/home/ubuntu/crail/crail-deployment/crail-apache/bin/crail fs -copyToLocal " + src_dir + "/.* " + dst_dir + "/";
   std::cout << "Execute command: " << command << "\n";
   int err = system(command.c_str());
   if (err != 0) {
@@ -108,6 +137,7 @@ void CrailClient::download_files( const std::vector<storage::GetRequest> & downl
         
   	success_callback( download_requests[ file_id ] ); //not necessary
   }
+  */
 }
 
 
